@@ -1,0 +1,43 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.env
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Project-specific files
+mapping.json
+*.log
+*.csv
+links_to_suspend.csv
+interfaces_to_suspend.txt
+
+# Generated interface data
+r*.conf
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db

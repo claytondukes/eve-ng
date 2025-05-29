@@ -1,0 +1,9 @@
+# Format: device_name,interface_name
+# Just specify the device name and interface name
+# The script will look up the device IDs and interface IDs automatically
+r4,e0/0
+r7,e0/0
+r24,e0/1
+r17,e0/1
+r22,e0/0
+sw35,e0/2
