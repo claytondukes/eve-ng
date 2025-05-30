@@ -1,0 +1,39 @@
+# Format: device_name,interface_name
+# Strategic interface suspensions that preserve redundant paths
+
+# Core/Distribution Layer Links
+# Core link but r4 has redundant paths
+r4,e0/0
+# WAN connection with redundant path through r9
+r7,e0/0
+# Data center link with alternate path
+r24,e0/1
+# Internet edge with redundant path
+r17,e0/1
+
+# Access Layer Links
+# Access layer router with backup path
+r22,e0/0
+# Switch link with redundant connection
+sw35,e0/2
+
+# Distribution Switches
+# Distribution switch with multiple uplinks
+sw30,e1/1
+# Server farm switch with backup path
+sw32,e0/3
+
+# Additional Links (primary side of redundant pairs)
+# Core router with multiple connections
+r13,e0/2
+# Distribution layer router
+r15,e0/1
+# Edge router with redundancy
+r27,e0/2
+# Access switch with backup uplink
+sw28,e0/1
+
+# DO NOT suspend these critical single-path links
+# r5,e0/0   # Critical path - do not suspend
+# r6,e0/1   # Single path to segment - do not suspend
+# sw29,e0/0 # Only uplink - do not suspend

@@ -733,14 +733,14 @@ def main():
     
     # Inventory command
     inventory_parser = subparsers.add_parser('inventory', help='Get inventory of EVE-NG lab')
-    inventory_parser.add_argument('--lab', help='EVE-NG lab path (relative to /opt/unetlab/labs/)')
+    inventory_parser.add_argument('--lab', help='EVE-NG lab path (relative to /opt/unetlab/labs/). If not specified, uses EVE_LAB from .env')
     
     # Suspend command
     suspend_parser = subparsers.add_parser('suspend', help='Suspend an interface or link')
     suspend_parser.add_argument('--interface', help='Host interface name to suspend')
     suspend_parser.add_argument('--device-id', help='EVE-NG device ID to suspend interface on')
     suspend_parser.add_argument('--interface-id', help='EVE-NG interface ID to suspend')
-    suspend_parser.add_argument('--lab', help='EVE-NG lab path (required for EVE-NG operations)')
+    suspend_parser.add_argument('--lab', help='EVE-NG lab path. If not specified, uses EVE_LAB from .env')
     suspend_parser.add_argument('--device1-id', help='First EVE-NG device ID for link suspension')
     suspend_parser.add_argument('--interface1-id', help='First EVE-NG interface ID for link suspension')
     suspend_parser.add_argument('--device2-id', help='Second EVE-NG device ID for link suspension')
@@ -752,7 +752,7 @@ def main():
     resume_parser.add_argument('--interface', help='Host interface name to resume')
     resume_parser.add_argument('--device-id', help='EVE-NG device ID to resume interface on')
     resume_parser.add_argument('--interface-id', help='EVE-NG interface ID to resume')
-    resume_parser.add_argument('--lab', help='EVE-NG lab path (required for EVE-NG operations)')
+    resume_parser.add_argument('--lab', help='EVE-NG lab path. If not specified, uses EVE_LAB from .env')
     resume_parser.add_argument('--device1-id', help='First EVE-NG device ID for link resumption')
     resume_parser.add_argument('--interface1-id', help='First EVE-NG interface ID for link resumption')
     resume_parser.add_argument('--device2-id', help='Second EVE-NG device ID for link resumption')
@@ -764,7 +764,7 @@ def main():
     flap_parser.add_argument('--interface', help='Host interface name to flap')
     flap_parser.add_argument('--device-id', help='EVE-NG device ID to flap interface on')
     flap_parser.add_argument('--interface-id', help='EVE-NG interface ID to flap')
-    flap_parser.add_argument('--lab', help='EVE-NG lab path (required for EVE-NG operations)')
+    flap_parser.add_argument('--lab', help='EVE-NG lab path. If not specified, uses EVE_LAB from .env')
     flap_parser.add_argument('--count', type=int, default=1, help='Number of times to flap the interface')
     flap_parser.add_argument('--delay', type=float, default=1.0, help='Delay in seconds between suspend and resume')
     flap_parser.add_argument('--dry-run', action='store_true', help='Only log what would be done, without actually flapping links')
@@ -773,7 +773,7 @@ def main():
     batch_parser = subparsers.add_parser('batch', help='Process multiple links from a file')
     batch_parser.add_argument('--operation', choices=['suspend', 'resume', 'flap'], required=True, help='Operation to perform on the links')
     batch_parser.add_argument('--file', required=True, help='File containing links to process, one per line in format:\ndevice1_id,interface1_id,device2_id,interface2_id')
-    batch_parser.add_argument('--lab', required=True, help='EVE-NG lab path (required for batch operations)')
+    batch_parser.add_argument('--lab', help='EVE-NG lab path. If not specified, uses EVE_LAB from .env')
     batch_parser.add_argument('--count', type=int, default=1, help='Number of times to flap each interface (only used with flap operation)')
     batch_parser.add_argument('--delay', type=float, default=1.0, help='Delay in seconds between suspend and resume (only used with flap operation)')
     batch_parser.add_argument('--dry-run', action='store_true', help='Only log what would be done, without actually performing operations')
@@ -803,22 +803,26 @@ def main():
     # Initialize node_to_host_interface for operations that need it
     node_to_host_interface = {}
     
+    # Get EVE-NG connection details from environment variables
+    env_host = os.getenv('EVE_HOST')
+    env_username = os.getenv('EVE_USERNAME')
+    env_password = os.getenv('EVE_PASSWORD')
+    env_lab = os.getenv('EVE_LAB')
+    
+    # Command-line arguments override environment variables
+    host = args.host or env_host or input("EVE-NG server URL: ")
+    username = args.username or env_username or input("Username: ")
+    password = args.password or env_password or getpass("Password: ")
+    
+    # Use a common logic for determining the lab path across all commands
+    if hasattr(args, 'lab') and args.lab:
+        lab_path = args.lab
+    elif env_lab:
+        lab_path = env_lab
+        logger.info(f"Using lab path from environment: {env_lab}")
+        
     # Handle commands based on the selected subcommand
     if args.command == 'inventory':
-        # Get EVE-NG connection details from environment variables or prompt
-        host = os.getenv('EVE_HOST')
-        username = os.getenv('EVE_USERNAME')
-        password = os.getenv('EVE_PASSWORD')
-        
-        # Prompt for missing details if needed
-        if not host:
-            host = input("EVE-NG server URL: ")
-        if not username:
-            username = input("EVE-NG username: ")
-        if not password:
-            password = getpass("EVE-NG password: ")
-        if not lab_path:
-            lab_path = input("Path to lab file: ")
         
         # Connect to EVE-NG and get inventory
         client = connect_to_eveng(host, username, password)
@@ -903,11 +907,14 @@ def main():
             print("Error: Either --interface, or --device-id and --interface-id must be specified")
             
     elif args.command == 'batch':
+        # Make sure we have a lab path (from command line or environment)
+        if not lab_path:
+            logger.error("No lab path specified. Use --lab or set EVE_LAB in .env")
+            return 1
+            
         # Ensure lab path is properly formed
-        if args.lab and not args.lab.startswith('/opt/unetlab/labs'):
-            lab_path = f"/opt/unetlab/labs/{args.lab}"
-        else:
-            lab_path = args.lab
+        if not lab_path.startswith('/opt/unetlab/labs'):
+            lab_path = f"/opt/unetlab/labs/{lab_path}"
             
         # Get count and delay for flap operations
         count = args.count if hasattr(args, 'count') else 1

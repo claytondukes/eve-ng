@@ -63,6 +63,8 @@ EVE_PASSWORD=eve
 EVE_LAB="/Labs/mylab.unl"
 ```
 
+If EVE_LAB is set in your .env file, you can omit the `--lab` parameter in all commands.
+
 ### Common Operations
 
 #### View Node and Interface Inventory
@@ -71,8 +73,11 @@ EVE_LAB="/Labs/mylab.unl"
 # View the complete inventory of nodes and interfaces in the lab
 python eve_link_manager.py inventory --lab "/Labs/mylab.unl"
 
+# Or if EVE_LAB is set in .env, simply:
+python eve_link_manager.py inventory
+
 # You can also enable debug logging for more detailed output
-python eve_link_manager.py --debug inventory --lab "/Labs/mylab.unl"
+python eve_link_manager.py --debug inventory
 ```
 
 #### Suspend an Interface
@@ -117,19 +122,22 @@ Then run the batch command:
 
 ```bash
 # Suspend all interfaces in the file with dry-run (preview only)
-python eve_link_manager.py batch --operation suspend --file interfaces.txt --lab "/Labs/mylab.unl" --dry-run
+python eve_link_manager.py batch --operation suspend --file interfaces.txt --dry-run
 
 # Actually suspend the interfaces
-python eve_link_manager.py batch --operation suspend --file interfaces.txt --lab "/Labs/mylab.unl"
+python eve_link_manager.py batch --operation suspend --file interfaces.txt
 
 # Resume the interfaces later
-python eve_link_manager.py batch --operation resume --file interfaces.txt --lab "/Labs/mylab.unl"
+python eve_link_manager.py batch --operation resume --file interfaces.txt
 
 # Flap all interfaces in the file once
-python eve_link_manager.py batch --operation flap --file interfaces.txt --lab "/Labs/mylab.unl"
+python eve_link_manager.py batch --operation flap --file interfaces.txt
 
 # Flap all interfaces in the file three times with a 2-second delay
-python eve_link_manager.py batch --operation flap --file interfaces.txt --lab "/Labs/mylab.unl" --count 3 --delay 2
+python eve_link_manager.py batch --operation flap --file interfaces.txt --count 3 --delay 2
+
+# You can still override the lab path from .env when needed
+python eve_link_manager.py batch --operation flap --file interfaces.txt --lab "/Custom/Lab/Path.unl"
 ```
 
 ### Custom Environment File
